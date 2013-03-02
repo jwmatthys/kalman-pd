@@ -1,5 +1,8 @@
-/* code for "kalman" pd class.  This takes two messages: floating-point
-   numbers, and "rats", and just prints something out for each message. */
+/* -----------------------------------------------------------------------
+   SIMPLE 1D KALMAN FILTER
+   Joel Matthys
+   joel at matthys music daht cahm
+*/
 
 #define MAX_ITERATIONS 100
 #define DEFAULT_ITERATIONS 30
@@ -10,9 +13,6 @@
 #include <math.h>
 #include "m_pd.h"
 
-
-/* the data structure for each copy of "kalman".  In this case we
-   only need pd's obligatory header (of type t_object). */
 typedef struct kalman
 {
   t_object x_ob;
@@ -28,17 +28,18 @@ typedef struct kalman
   double analyze_mean, analyze_sd;
 } t_kalman;
 
+// prototype for method to determine mean and standard deviation of input
 void analyze (t_kalman *x, t_float f);
 
-/* this is called back when kalman gets a "float" message (i.e., a
-   number.) */
 void kalman_float(t_kalman *x, t_floatarg f)
 {
+  // perform kalman filtering
   if (x->toggle_analyze == 0)
     {
       x->history[x->index] = f; // store new value
       x->index = (x->index + 1) % x->iterations; // increment index
 
+      // the calculations for the kalman filtering
       double Pk = 1;
       double xk = (double)x->init_value;
       int i;
@@ -54,9 +55,11 @@ void kalman_float(t_kalman *x, t_floatarg f)
       outlet_float (x->x_ob.ob_outlet, xk);
       x=NULL; /* don't warn about unused variables */
     }
+  // or analyze input for mean and standard deviation
   else analyze (x,f);
 }
 
+// internal method called by kalman_float
 void analyze (t_kalman *x, t_float f)
 {
   x->count++;
@@ -70,7 +73,7 @@ void analyze (t_kalman *x, t_float f)
 /* this is called when kalman gets the message, "noise". */
 void kalman_setnoise(t_kalman *x, t_float f)
 {
-  post("kalman: noise set to %f", f);
+  post("kalman: noise covariance set to %f", f);
   x->noise_covariance = f;
   x=NULL; /* don't warn about unused variables */
 }
@@ -78,7 +81,7 @@ void kalman_setnoise(t_kalman *x, t_float f)
 /* this is called when kalman gets the message, "init". */
 void kalman_setinit(t_kalman *x, t_float f)
 {
-  post("kalman: init val set to %f", f);
+  post("kalman: initial val set to %f", f);
   x->init_value = f;
   x=NULL; /* don't warn about unused variables */
 }
@@ -86,7 +89,18 @@ void kalman_setinit(t_kalman *x, t_float f)
 /* this is called when kalman gets the message, "iterations". */
 void kalman_setiterations(t_kalman *x, t_float f)
 {
-  post("kalman: iteration val set to %f", f);
+  short iter = (short) f;
+  if (iter < 1)
+    {
+      iter = 1;
+      error ("kalman: minimum is 1 iteration");
+    }
+  if (iter > MAX_ITERATIONS)
+    {
+      iter = MAX_ITERATIONS;
+      error ("kalman: exceeded maximum of %d iterations", MAX_ITERATIONS);
+    }
+  post("kalman: number of iterations set to %d", iter);
   x->iterations = f;
   x=NULL; /* don't warn about unused variables */
 }
@@ -170,6 +184,7 @@ kalman_class = class_new(gensym("kalman"), (t_newmethod)kalman_new, (t_method)ka
   class_addmethod(kalman_class, (t_method)kalman_setnoise, gensym("noise"), A_FLOAT, 0);
   class_addmethod(kalman_class, (t_method)kalman_setiterations, gensym("iterations"), A_FLOAT, 0);
   class_addmethod(kalman_class, (t_method)kalman_setinit, gensym("init"), A_FLOAT, 0);
+  class_addmethod(kalman_class, (t_method)kalman_setinit, gensym("mean"), A_FLOAT, 0);
   class_addmethod(kalman_class, (t_method)kalman_setanalyze, gensym("analyze"), A_FLOAT, 0);
   class_addfloat(kalman_class, kalman_float);
 }

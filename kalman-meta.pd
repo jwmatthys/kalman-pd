@@ -1,6 +1,6 @@
-#N canvas 15 49 200 200 10;
-#N canvas 25 49 420 300 META 1;
-#X text 13 41 NAME template;
-#X text 10 25 AUTHOR example@fsf.org;
-#X text 10 10 VERSION 0.0;
+#N canvas 13 109 200 200 10;
+#N canvas 23 81 420 300 META 1;
+#X text 10 10 VERSION 0.1;
+#X text 10 25 AUTHOR joel@matthysmusic.com;
+#X text 13 41 NAME linear 1d kalman estimator;
 #X restore 10 10 pd META;
