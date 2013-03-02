@@ -1,4 +1,4 @@
-#N canvas 546 162 715 425 10;
+#N canvas 311 145 715 425 10;
 #N canvas 345 180 494 344 META 0;
 #X text 12 105 HELP_PATCH_AUTHORS "pd meta" information added by Jonathan
 Wilkes for Pd version 0.42.;
@@ -68,7 +68,7 @@ Wilkes for Pd version 0.42.;
 #X restore 344 43 pd counter;
 #X obj 284 21 t f f b;
 #X obj 429 -53 vsl 15 128 0 1 0 0 testnoise empty empty 0 -9 0 10 -4032
--1 -1 12700 1;
+-1 -1 2540 1;
 #X obj 284 -67 loadbang;
 #X obj 55 -67 cnv 15 200 160 empty empty empty 20 12 0 14 -233017 -66577
 0;
@@ -141,8 +141,6 @@ the user;
 #X text 71 267 to reduce it to 10 or less. See [pd settings] for info
 ;
 #X msg 390 -50 0.2;
-#X msg 179 33 mean 0;
-#X msg 156 9 noise 0.8;
 #X floatatom 217 70 5 0 0 0 - - -;
 #X text 158 70 error amt;
 #X connect 3 0 5 0;
@@ -159,8 +157,6 @@ the user;
 #X connect 14 0 13 0;
 #X connect 16 0 22 0;
 #X connect 22 0 12 0;
-#X connect 22 1 39 0;
+#X connect 22 1 37 0;
 #X connect 23 0 22 0;
 #X connect 36 0 9 0;
-#X connect 37 0 22 0;
-#X connect 38 0 22 0;
