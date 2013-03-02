@@ -15,7 +15,8 @@
 
 typedef struct kalman
 {
-  t_object x_ob;
+  t_object x_obj;
+  t_outlet *filter_out, *accuracy_out;
   t_float noise_covariance;
   t_float init_value;
   t_int iterations;
@@ -24,8 +25,9 @@ typedef struct kalman
   t_int toggle_analyze;
   // analysis variables
   t_int count;
-  double sum, sumsquares;
-  double analyze_mean, analyze_sd;
+  double sum, sumsquares, sumvariance;
+  t_float previous;
+  double analyze_mean, analyze_sd, analyze_variance;
 } t_kalman;
 
 // prototype for method to determine mean and standard deviation of input
@@ -33,30 +35,29 @@ void analyze (t_kalman *x, t_float f);
 
 void kalman_float(t_kalman *x, t_floatarg f)
 {
+  // analyze input for mean and standard deviation
+  if ((int)x->toggle_analyze != 0) analyze (x,f);
+
   // perform kalman filtering
-  if (x->toggle_analyze == 0)
+  x->history[x->index] = f; // store new value
+  x->index = (x->index + 1) % x->iterations; // increment index
+
+  // the calculations for the kalman filtering
+  double Pk = 1;
+  double xk = (double)x->init_value;
+  int i;
+
+  for (i = 0; i < x->iterations; i++)
     {
-      x->history[x->index] = f; // store new value
-      x->index = (x->index + 1) % x->iterations; // increment index
-
-      // the calculations for the kalman filtering
-      double Pk = 1;
-      double xk = (double)x->init_value;
-      int i;
-
-      for (i = 0; i < x->iterations; i++)
-        {
-          double Zk = (double)x->history [(i + x->index) % x->iterations];
-          double Kk = Pk / (Pk + (double)x->noise_covariance);
-          xk = xk + Kk * (Zk - xk);
-          Pk = (1 - Kk) * Pk;
-        }
-
-      outlet_float (x->x_ob.ob_outlet, xk);
-      x=NULL; /* don't warn about unused variables */
+      double Zk = (double)x->history [(i + x->index) % x->iterations];
+      double Kk = Pk / (Pk + (double)x->noise_covariance);
+      xk = xk + Kk * (Zk - xk);
+      Pk = (1 - Kk) * Pk;
     }
-  // or analyze input for mean and standard deviation
-  else analyze (x,f);
+
+  outlet_float (x->filter_out, xk);
+  outlet_float (x->accuracy_out, xk);
+  x=NULL; /* don't warn about unused variables */
 }
 
 // internal method called by kalman_float
@@ -65,7 +66,10 @@ void analyze (t_kalman *x, t_float f)
   x->count++;
   x->sum += f;
   x->sumsquares += (f*f);
+  x->sumvariance += fabs(f - x->previous);
+  x->previous = f;
   x->analyze_mean = x->sum / x->count;
+  x->analyze_variance = x-> sumvariance / x->count;
   if (x->count==1) x->analyze_sd = 1;
   else x->analyze_sd = sqrt (x->sumsquares - (x->sum * x->sum)/(x->count - 1));
 }
@@ -73,8 +77,15 @@ void analyze (t_kalman *x, t_float f)
 /* this is called when kalman gets the message, "noise". */
 void kalman_setnoise(t_kalman *x, t_float f)
 {
-  post("kalman: noise covariance set to %f", f);
-  x->noise_covariance = f;
+  if ((float) f <= 0)
+    {
+      error ("kalman: noise cannot be 0 or less");
+    }
+  else
+    {
+      post("kalman: noise covariance set to %f", f);
+      x->noise_covariance = f;
+    }
   x=NULL; /* don't warn about unused variables */
 }
 
@@ -120,7 +131,7 @@ void kalman_setanalyze(t_kalman *x, t_float f)
     {
       x->toggle_analyze = 0;
       x->init_value = (t_float)x->analyze_mean;
-      x->noise_covariance = (t_float)(x->analyze_mean / x->analyze_sd);
+      x->noise_covariance = (t_float)x->analyze_variance;
       int i;
       for (i=0; i<MAX_ITERATIONS; i++) x->history[i] = x->init_value;
       post("kalman: analyze mode off.\nmean: %f, standard deviation: %f, noise covariance: %f", x->init_value, x-> analyze_sd, x->noise_covariance);
@@ -137,7 +148,8 @@ t_class *kalman_class;
 void *kalman_new(t_symbol *s, int argc, t_atom *argv)
 {
   t_kalman *x = (t_kalman *)pd_new(kalman_class);
-  outlet_new(&x->x_ob, &s_float);
+  x->filter_out = outlet_new(&x->x_obj, &s_float);
+  x->accuracy_out = outlet_new(&x->x_obj, &s_float);
 
   x->iterations = DEFAULT_ITERATIONS;
   x->noise_covariance = DEFAULT_NOISE_COVARIANCE;
