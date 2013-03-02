@@ -1,13 +1,15 @@
-#N canvas 311 145 715 425 10;
-#N canvas 345 180 494 344 META 0;
-#X text 12 105 HELP_PATCH_AUTHORS "pd meta" information added by Jonathan
+#N canvas 307 153 715 425 10;
+#N canvas 343 184 494 344 META 0;
+#X text 12 157 HELP_PATCH_AUTHORS "pd meta" information added by Jonathan
 Wilkes for Pd version 0.42.;
 #X text 12 25 LICENSE GPL v2;
 #X text 12 5 KEYWORDS kalman filter;
 #X text 12 45 DESCRIPTION simple linear one-dimensional kalman filter
 ;
 #X text 12 65 INLET_0 float analyze mean noise iterations init;
-#X text 12 85 AUTHOR Joel Matthys;
+#X text 12 137 AUTHOR Joel Matthys;
+#X text 12 81 OUTLET_0 float filtered output;
+#X text 13 98 OUTLET_1 float potential noise in output;
 #X restore 623 277 pd META;
 #N canvas 0 0 450 300 (subpatch) 0;
 #X array original 200 float 0;
