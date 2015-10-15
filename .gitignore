@@ -1,4 +1,5 @@
 *.pd_linux
+*.pd_darwin
 *.log
 *~
 *.o
